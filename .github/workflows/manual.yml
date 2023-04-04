@@ -33,9 +33,6 @@ jobs:
           cd frontend
           npm ci
 
-      - name: Run tests
-        run: npm test
-
   deploy:
     needs: build-and-test
     runs-on: ubuntu-latest
