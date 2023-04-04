@@ -1,0 +1,62 @@
+name: CI/CD Pipeline (git pull)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install and cache root dependencies
+        run: npm ci
+
+      - name: Install and cache frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run tests
+        run: npm test
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Set up SSH
+        run: |
+          echo "${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}" > private_key
+          chmod 600 private_key
+
+      - name: Update VPS repository
+        env:
+          VPS_IP: 31.207.37.205
+          VPS_USER: root
+        run: |
+          ssh -i private_key -o StrictHostKeyChecking=no $VPS_USER@$VPS_IP "cd /var/www/mern-tutorial && git pull"
+
+      - name: Update VPS dependencies and restart server
+        env:
+          VPS_IP: 31.207.37.205
+          VPS_USER: root
+        run: |
+          ssh -i private_key -o StrictHostKeyChecking=no $VPS_USER@$VPS_IP "cd /var/www/mern-tutorial && npm ci && cd frontend && npm ci && npm run build && cd .. && pm2 restart backend/server.js || pm2 start backend/server.js --name mern-tutorial"
