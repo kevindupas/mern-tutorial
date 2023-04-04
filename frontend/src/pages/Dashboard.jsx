@@ -43,7 +43,7 @@ function Dashboard() {
         <>
             <main className="grid min-h-full place-items-center bg-white px-6 py-4 sm:py-6 lg:px-8 mt-24">
                 <div className="text-center">
-                    <p className="text-xl font-semibold text-indigo-600 uppercase">Welcome</p>
+                    <p className="text-xl font-semibold text-blue-600 uppercase">Welcome</p>
                     <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-5xl uppercase">
                         {' '}
                         {user && user.name}
