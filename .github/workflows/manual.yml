@@ -1,0 +1,75 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install and cache root dependencies
+        run: npm ci
+
+      - name: Install and cache frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18.x
+
+      - name: Install and cache root dependencies
+        run: npm ci
+
+      - name: Install and cache frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Set up SSH
+        run: |
+          echo "${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}" > private_key
+          chmod 600 private_key
+          sudo apt-get install -y openssh-client
+
+      - name: Deploy to VPS
+        env:
+          VPS_IP: 31.207.37.205
+          VPS_USER: root
+        run: |
+          rsync -avz -e "ssh -i private_key -o StrictHostKeyChecking=no" --exclude '.git*' --exclude 'node_modules' ./ $VPS_USER@$VPS_IP:/var/www/mern-tutorial
+          ssh -i private_key -o StrictHostKeyChecking=no $VPS_USER@$VPS_IP "cd /var/www/mern-tutorial && npm ci && cd frontend && npm ci && npm run build && cd .. && pm2 restart backend/server.js"
