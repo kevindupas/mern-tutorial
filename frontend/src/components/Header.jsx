@@ -7,7 +7,7 @@ import { Dialog } from '@headlessui/react';
 import { logout, reset } from '../features/auth/authSlice';
 
 const navigation = [
-    { name: 'Product', href: '#' },
+    { name: 'Titi', href: '#' },
     { name: 'Tata', href: '#' },
     { name: 'Toto', href: '#' },
     { name: 'Company', href: '#' },
