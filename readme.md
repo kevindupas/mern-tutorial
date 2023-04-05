@@ -25,4 +25,4 @@ npm run server
 
 I am not sure how long this will be up
 
-Link :
+Link : https://admin-sn.kevindupas.com/
